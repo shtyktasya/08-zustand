@@ -9,17 +9,15 @@ import type { Note, NoteTag } from '@/types/note';
 
 import SearchBox from '@/components/SearchBox/SearchBox';
 import NoteList from '@/components/NoteList/NoteList';
-import NoteForm from '@/components/NoteForm/NoteForm';
-import Modal from '@/components/Modal/Modal';
+import Link from 'next/link';
 import Pagination from '@/components/Pagination/Pagination';
 
 type NotesClientProps = {
-  category?: NoteTag
-}
-export default function NotesClient({category}: NotesClientProps) {
+  category?: NoteTag;
+};
+export default function NotesClient({ category }: NotesClientProps) {
   const [page, setPage] = useState<number>(1);
   const [search, setSearch] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const perPage = 12;
 
@@ -35,7 +33,7 @@ export default function NotesClient({category}: NotesClientProps) {
         page,
         perPage,
         search,
-        ...(category ? {tag: category}: {})
+        ...(category ? { tag: category } : {}),
       }),
     placeholderData: keepPreviousData,
   });
@@ -54,22 +52,14 @@ export default function NotesClient({category}: NotesClientProps) {
             onPageChange={selectedPage => setPage(selectedPage + 1)}
           />
         )}
-        <button className={css.button} onClick={() => setIsModalOpen(true)}>
+        <Link href="/notes/action/create" className={css.button}>
           Create note +
-        </button>
+        </Link>
       </header>
       {isLoading && <p>Loading...</p>}
       {isError && <p>Error loading notes</p>}
       {!isLoading && notes.length > 0 && <NoteList notes={notes} />}
       {!isLoading && notes.length === 0 && <p>No notes found</p>}
-      {isModalOpen && (
-        <Modal onClose={() => setIsModalOpen(false)}>
-          <NoteForm
-            onSuccess={() => setIsModalOpen(false)}
-            onCancel={() => setIsModalOpen(false)}
-          />
-        </Modal>
-      )}
     </div>
   );
 }
