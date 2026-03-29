@@ -2,13 +2,15 @@
 import css from './NoteForm.module.css';
 import { useRouter } from 'next/navigation';
 import { useNoteDraftStore } from '@/lib/store/noteStore';
-import { createNote, type NewNoteData } from '@/lib/api';
+import { createNote, NewNoteData } from '@/lib/api';
 import type { NoteTag } from '@/types/note';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const NOTE_TAGS: NoteTag[] = ['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'];
 
 const NoteForm = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { draft, setDraft, clearDraft } = useNoteDraftStore();
 
   const handleChange = (
@@ -19,24 +21,29 @@ const NoteForm = () => {
 
   const handleCancel = () => router.push('/notes/filter/all');
 
-  const handleFormAction = async (formData: FormData) => {
-    const note: NewNoteData = {
+  const { mutate } = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      clearDraft();
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      router.push('/notes/filter/all');
+    },
+    onError: err => {
+      console.error('Failed to create note:', err);
+    },
+  });
+  const handleSubmit = (formData: FormData) => {
+    const values: NewNoteData = {
       title: formData.get('title') as string,
       content: formData.get('content') as string,
       tag: formData.get('tag') as NoteTag,
     };
 
-    try {
-      await createNote(note);
-      clearDraft();
-      router.push('/notes/filter/all');
-    } catch (err) {
-      console.error('Failed to create note:', err);
-    }
+    mutate(values);
   };
 
   return (
-    <form className={css.form} action={handleFormAction}>
+    <form className={css.form} action={handleSubmit}>
       <div className={css.formGroup}>
         <label htmlFor="title">Title</label>
         <input
